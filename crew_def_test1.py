@@ -18,18 +18,78 @@ class AllAgentsCrew:
 
     # ---------- crew ----------
     def _create_crew(self) -> Crew:
-        builder = Agent(
-            role="Builder",
-            goal="Coordinate suppliers and deliver the best overall deal",
-            backstory="Veteran general contractor; summarises quotes & picks winners.",
-            verbose=self.verbose,
+        # Client
+        client_agent = Agent(
+            role="Client Agent",
+            goal="Define project requirements, request progress reports, and sign a contract with the Builder company.",
+            backstory="The Client represents the end-user and initiates the construction project. Responsible for outlining project  \
+                requirements, reviewing progress updates, and authorizing key milestones and payments. Interacts directly with the  \
+                Master Agent to ensure the project stays aligned with expectations.",
+            verbose=True
         )
-
-        client = Agent(
-            role="Client",
-            goal="Approve or reject the builder’s bundled bid, then wait for milestone reports.",
-            backstory="Acts as the project owner and funding source.",
-            verbose=self.verbose,
+        
+        # Construction Company
+        master_agent = Agent(
+            role="Master Agent",
+            goal="Oversee the full construction lifecycle, verify inputs, trigger tasks, and report to the Client Agent.",
+            backstory="The Master Agent acts as the Builder company's brain, orchestrating the entire project pipeline. " \
+                "It manages the Bidding, Scheduling, Payments, and Vision Agents, while communicating directly with the Client. " \
+                "It uses insights from Vision AI to determine when to release payments and assess if timelines or budgets need adjustment. " \
+                "If delays are detected, it coordinates with the Scheduling Agent to adjust subcontractor timelines accordingly.",
+            verbose=True,
+            
+        )
+        
+        bidding_agent = Agent(
+            role="Bidding Agent",
+            goal="Receive requirements from the Master Agent, collect bids from Subcontractor Agents, and select the most optimal bid.",
+            backstory="The Bidding Agent manages competitive tendering. It evaluates proposals from subcontractors based on price, timelines, and quality. " \
+            "Operates under the guidance of the Master Agent to ensure the best match for the project's needs.",
+            verbose=True,
+            
+        )
+        
+        scheduling_agent = Agent(
+            role='Scheduling Agent',
+            goal='Preemptively schedule time with subcontractor agent based on the progress of the building. eg: schedule time with subcontractor 2 if the subcontractor 1 finishes work or 80% completion is met ',
+            backstory='Coordinates task assignments based on milestones and AI insights given by Master Agent',
+            verbose=True,
+            
+        )
+        
+        # Payments AI
+        payments_agent = Agent(
+            role="Payments Agent",
+            goal="Disburse milestone-based payments using data from the Vision Agent.",
+            backstory="Handles all financial transactions. First receives project funds from the Client Agent, then releases staged payments to subcontractors based on oversight by the Master Agent.",
+            verbose=True,
+            
+        )
+        
+        
+        # Subcontractor Agent
+        subcontractor_agent1 = Agent(
+            role="Subcontractor Agent 1",
+            goal="Submit competitive bids to the Bidding Agent and execute tasks when scheduled.",
+            backstory="A trusted subcontractor who specializes in foundational construction work. Known for reliability and fair pricing. Competes with Subcontractor Agent 2 during bidding.",
+            verbose=True
+        )
+        
+        
+        subcontractor_agent2 = Agent(
+            role="Subcontractor Agent 2",
+            goal="Submit bids to the Bidding Agent without exceeding Subcontractor Agent 1’s bid. Execute tasks post-approval.",
+            backstory="A newer subcontractor with a lean team. Offers competitive rates but is still building reputation. Works closely with Subcontractor Agent 1 during phased construction tasks.",
+            verbose=True
+        )
+        
+        
+        # Vision AI
+        vision_agent = Agent(
+            role="Progress and Budget Tracking Agent",
+            goal="Run predictions using ⁠ predict.py ⁠ and continuously update the Master Agent with insights on progress and budget.",
+            backstory="An AI-powered monitoring agent that uses a computer vision model (⁠ predict.py ⁠) to analyze image stills from construction site cameras. It estimates percent completion, timeline status, and remaining days. Insights are shared with the Master Agent, which in turn informs the Scheduling and Payments Agents.",
+            verbose=True
         )
 
 
@@ -47,91 +107,72 @@ class AllAgentsCrew:
         # tasks
         tasks = [
             Task(
-                description=(
-                    "Parse the client brief: {input_data}. Extract budget (+10 % stretch), "
-                    "deadline and key preferences. Reply in **≤2 sentences**."
-                ),
-                expected_output="Req brief in 2 sentences",
-                agent=builder,
-            ),
-            # construction quotes
-            *[
-                Task(
-                    description="Give your best construction quote in **≤2 sentences**.",
-                    expected_output=f"Construction quote {suffix} (2 sentences)",
-                    agent=agent,
-                )
-                for suffix, agent in zip(
-                    ["A", "B", "C"],
-                    [construction_A, construction_B, construction_C],
-                )
-            ],
-            # woodwork quotes
-            *[
-                Task(
-                    description="Give your best woodwork quote in **≤2 sentences**.",
-                    expected_output=f"Woodwork quote {suffix} (2 sentences)",
-                    agent=agent,
-                )
-                for suffix, agent in zip(["A", "B"], [wood_A, wood_B])
-            ],
-            # paint quotes
-            *[
-                Task(
-                    description="Give your best paint quote in **≤2 sentences**.",
-                    expected_output=f"Paint quote {suffix} (2 sentences)",
-                    agent=agent,
-                )
-                for suffix, agent in zip(["A", "B"], [paint_A, paint_B])
-            ],
-            # builder chooses
-            Task(
-                description=(
-                    "Compare all quotes against budget & preferences. Pick one construction, "
-                    "one woodwork and one paint company. Explain each quote **and** why the "
-                    "combination is chosen. No strict length limit here."
-                ),
-                expected_output=(
-                    "Final deal: chosen suppliers, combined cost/duration, justification."
-                ),
-                agent=builder,
-            ),
-            Task(  # 1‑line acceptance / rejection
-                description="Reply **ACCEPT** or **REJECT** in one sentence.",
-                expected_output="ACCEPT | REJECT + 1‑sentence comment",
-                agent=client,
-            ),
-            Task(  # kick‑off
-                description="If the client accepted, notify all chosen suppliers to start work.",
-                expected_output="Work‑order sent to each winning supplier.",
-                agent=builder,
-            ),
-            Task(  # progress aggregation (repeat this block per milestone if you like)
-                description="Collect progress % and money spent from every active supplier, "
-                            "summarise in JSON {{supplier, pct_complete, dollars_spent}}.",
-                expected_output="ProgressSummary‑M1‑JSON",
-                agent=builder,
-            ),
-            Task(  # payment release & log
-                description="When a supplier hits its milestone (pct_complete ≥ 100 for M1), "
-                            "log a **PaymentLog‑M1** entry and mark that milestone closed.",
-                expected_output="PaymentLog‑M1 entry",
-                agent=builder,
+                description='Client provides project requirements to Master Agent.',
+                expected_output='Client requirements documented.',
+                agent=client_agent
             ),
             Task(
-                description="Verify every supplier shows pct_complete == 100. "
-                            "If true, declare the house finished and output a final ledger "
-                            "of all PaymentLog entries.",
-                expected_output="ProjectComplete + FinalLedger JSON",
-                agent=builder,
+                description='Establish smart contract between Client and Master through Payments Agent.',
+                expected_output='Smart contract with proportional milestone payments created.',
+                agent=payments_agent
+            ),
+            Task(
+                description='Initiate and manage bidding process.',
+                expected_output='Bids from subcontractors collected.',
+                agent=bidding_agent
+            ),
+            Task(
+                description='Evaluate bids and select subcontractor.',
+                expected_output='Best bid selected and forwarded to Payments Agent.',
+                agent=master_agent
+            ),
+            Task(
+                description='Establish smart contract between Master and Subcontractor via Payments Agent.',
+                expected_output='Smart contract established with proportional payment terms.',
+                agent=payments_agent
+            ),
+            Task(
+                description='Create and assign a schedule for subcontractor.',
+                expected_output='Timeline with expected progress percentage established.',
+                agent=scheduling_agent
+            ),
+            Task(
+                description='Subcontractor executes scheduled task and reports progress.',
+                expected_output='Work report with percent completion sent to Master Agent.',
+                agent=subcontractor_agent1
+            ),
+            Task(
+                description='Vision Agent analyzes progress from site footage.',
+                expected_output='AI-based progress and delay report submitted.',
+                agent=vision_agent
+            ),
+            Task(
+                description='Verify subcontractor report with Vision Agent’s report.',
+                expected_output='Cross-validated progress data.',
+                agent=master_agent
+            ),
+            Task(
+                description='Disburse payment to subcontractor and update smart contract.',
+                expected_output='Funds transferred; smart contract updated.',
+                agent=payments_agent
+            ),
+            Task(
+                description='Reschedule or assign next subcontractor if progress ≥ 80%.',
+                expected_output='Schedule updated; next subcontractor prepped if needed.',
+                agent=scheduling_agent
+            ),
+            Task(
+                description='Update client on construction progress.',
+                expected_output='Progress report shared with Client Agent.',
+                agent=master_agent
+            ),
+            Task(
+                description='Request next installment from client based on progress.',
+                expected_output='Funds requested and smart contract updated.',
+                agent=payments_agent
             )
         ]
 
-        agents = [
-            client,
-            builder,
-            construction_A, construction_B, construction_C,
-            wood_A, wood_B,
-            paint_A, paint_B,
-        ]
+
+        agents = [client_agent, master_agent, bidding_agent, scheduling_agent, payments_agent, subcontractor_agent1, subcontractor_agent2, vision_agent]
         return Crew(agents=agents, tasks=tasks)
