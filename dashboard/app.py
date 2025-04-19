@@ -1,31 +1,24 @@
-from flask import Flask, render_template, request
+import re
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
-# These would normally come from your database or model
-home_description_text = ""
-predicted_date = "December 15, 2025"
-progress_percent = 45  # update dynamically later
+@app.route('/')
+def show_logs():
+    log_lines = []
+    pattern = r"\[\d{4}-\d{2}-\d{2}[\s,:\d]+\]\s*\[[^\]]+\]\s*(.*)"
 
-# Move highlighted dates to Python
-highlighted_dates = [
-    "2025-04-10",
-    "2025-04-15",
-    "2025-04-27"
-]
+    with open('task_log-2.log', 'r') as f: #CHANGE PATH!!!!
+        for idx, line in enumerate(f):
+            if idx == 0:
+                continue  # skip the first line
+            match = re.match(pattern, line)
+            if match:
+                log_lines.append(match.group(1).strip())
+            else:
+                log_lines.append(line.strip())  # fallback if pattern doesn't match
 
-@app.route('/', methods=['GET', 'POST'])
-def dashboard():
-    global home_description_text
-
-    if request.method == 'POST':
-        home_description_text = request.form.get('home_description')
-        print("Submitted description:", home_description_text)
-
-    return render_template('dashboard.html',
-                           predicted_date=predicted_date,
-                           progress_percent=progress_percent,
-                           highlighted_dates=highlighted_dates)
+    return render_template('dashboard.html', logs=log_lines)
 
 if __name__ == '__main__':
     app.run(debug=True)
