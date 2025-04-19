@@ -3,46 +3,39 @@
 <head>
     <title>Submit Job</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .progress-container {
-            margin-top: 20px;
-            display: none;
-        }
-        .progress-item {
-            margin: 10px 0;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        #error-message {
-            color: red;
-            display: none;
-        }
-    </style>
+    <!-- Tailwind CSS CDN (for demo purposes; we will use build process in production) -->
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h1>Submit Your Job</h1>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-start py-10">
+    <h1 class="text-3xl font-bold mb-8 text-center">Submit Your Job</h1>
     
-    <form id="jobForm">
-        <label for="input_text">Enter your project details:</label><br>
-        <textarea id="input_text" name="input_text" rows="5" cols="50"></textarea><br><br>
-        <button type="submit">Submit</button>
+    <form id="jobForm" class="w-full max-w-lg bg-white rounded-xl shadow p-8 mb-6">
+        <label for="input_text" class="block mb-2 text-base font-medium text-gray-700">
+            Enter your project details:
+        </label>
+        <textarea id="input_text" name="input_text" rows="5" 
+            class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-900 text-base p-3 focus:ring-blue-500 focus:border-blue-500 transition mb-4"
+            placeholder="Describe your project..."></textarea>
+        <button type="submit"
+            class="w-full sm:w-auto px-6 py-2.5 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-base transition">
+            Submit
+        </button>
     </form>
 
-    <div id="response" style="margin-top: 20px;"></div>
+    <div id="response" class="w-full max-w-lg mt-2"></div>
 
-    <div id="status-check" style="display: none; margin-top: 20px;">
-        <h2>Check Job Status</h2>
-        <label for="job_id_input">Enter Job ID:</label><br>
-        <input type="text" id="job_id_input" placeholder="Enter Job ID here"><br><br>
-        <button id="checkStatusButton">Check Status</button>
-        <div id="statusResponse" style="margin-top: 10px;"></div>
+    <div id="status-check" style="display: none;" class="w-full max-w-lg bg-white rounded-xl shadow p-8 mt-6">
+        <h2 class="text-xl font-semibold mb-4">Check Job Status</h2>
+        <label for="job_id_input" class="block mb-2 text-base font-medium text-gray-700">
+            Enter Job ID:
+        </label>
+        <input type="text" id="job_id_input" placeholder="Enter Job ID here"
+            class="block w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-900 text-base p-3 focus:ring-blue-500 focus:border-blue-500 transition mb-4" />
+        <button id="checkStatusButton"
+            class="w-full sm:w-auto px-6 py-2.5 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-base transition">
+            Check Status
+        </button>
+        <div id="statusResponse" class="mt-4"></div>
     </div>
 
     <script>
@@ -58,20 +51,20 @@
                     input_text: $('#input_text').val()
                 },
                 success: function(response) {
-                    $('#response').html(`
-                        <h3>Response from Server:</h3>
-                        <pre>${JSON.stringify(response, null, 2)}</pre>
-                    `);
-
-                    // Save the job ID and show the status check section
-                    jobId = response.job_id;
-                    $('#job_id_input').val(jobId); // Pre-fill the job ID input field
-                    $('#status-check').show();
+                    // Extract job_id from the nested response
+                    let jobId = response?.start_job_response?.job_id || '';
+                    if (jobId) {
+                        $('#response').html(`<strong>Job ID:</strong> <span id="jobIdValue" class="font-mono bg-gray-200 rounded px-2 py-1">${jobId}</span>`);
+                        $('#job_id_input').val(jobId); // Pre-fill the job ID input field
+                        $('#status-check').show();
+                    } else {
+                        $('#response').html(`<span class="text-red-600">Job ID not found in response.</span>`);
+                    }
                 },
                 error: function(xhr) {
                     $('#response').html(`
-                        <h3>Error:</h3>
-                        <pre>${xhr.responseText}</pre>
+                        <h3 class="text-red-700 font-semibold">Error:</h3>
+                        <pre class="bg-red-50 border border-red-200 rounded p-2 text-red-800">${xhr.responseText}</pre>
                     `);
                 }
             });
@@ -81,7 +74,7 @@
             const jobIdToCheck = $('#job_id_input').val().trim();
 
             if (!jobIdToCheck) {
-                $('#statusResponse').html('<p>Please enter a valid Job ID.</p>');
+                $('#statusResponse').html('<p class="text-red-600">Please enter a valid Job ID.</p>');
                 return;
             }
 
@@ -90,14 +83,14 @@
                 method: 'GET',
                 success: function(response) {
                     $('#statusResponse').html(`
-                        <h3>Job Status:</h3>
-                        <pre>${JSON.stringify(response, null, 2)}</pre>
+                        <h3 class="font-semibold text-green-700">Job Status:</h3>
+                        <pre class="bg-green-50 border border-green-200 rounded p-2 text-green-800">${JSON.stringify(response, null, 2)}</pre>
                     `);
                 },
                 error: function(xhr) {
                     $('#statusResponse').html(`
-                        <h3>Error:</h3>
-                        <pre>${xhr.responseText}</pre>
+                        <h3 class="text-red-700 font-semibold">Error:</h3>
+                        <pre class="bg-red-50 border border-red-200 rounded p-2 text-red-800">${xhr.responseText}</pre>
                     `);
                 }
             });
