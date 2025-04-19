@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 API_BASE_URL = "http://localhost:8000"  # Your FastAPI service URL
 
-@app.route('/', methods=['GET'])
+@app.route('/agent_dashboard', methods=['GET'])
 def index():
     return render_template('index.html')
 
@@ -92,6 +92,39 @@ def check_status(job_id):
             "status": "error",
             "message": str(e)
         }), 500
+
+
+# These would normally come from our model
+home_description_text = ""
+predicted_date = "December 15, 2025"
+progress_percent = 45  # update dynamically later
+
+# Move highlighted dates to Python
+highlighted_dates = [
+    "2025-04-10",
+    "2025-04-15",
+    "2025-04-27"
+]
+
+@app.route('/', methods=['GET', 'POST'])
+def dashboard():
+    global home_description_text
+
+    if request.method == 'POST':
+        home_description_text = request.form.get('home_description')
+        print("Submitted description:", home_description_text)
+
+    return render_template('dashboard.html',
+                           predicted_date=predicted_date,
+                           progress_percent=progress_percent,
+                           highlighted_dates=highlighted_dates)
+
+@app.route('/progress_tracker', methods=['GET'])
+def progress_tracker():
+    # Simulate progress tracking
+    progress_percent = 45
+    # In a real application, this would be dynamic
+    return render_template('progress_tracker.html', progress_percent=progress_percent)
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
