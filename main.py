@@ -6,7 +6,7 @@ from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel, Field, field_validator
 from masumi.config import Config
 from masumi.payment import Payment, Amount
-from crew_definition import ResearchCrew
+from crew_definition import AllAgentsCrew
 from logging_config import setup_logging
 
 # Configure logging
@@ -68,9 +68,9 @@ class ProvideInputRequest(BaseModel):
 # CrewAI Task Execution
 # ─────────────────────────────────────────────────────────────────────────────
 async def execute_crew_task(input_data: str) -> str:
-    """ Execute a CrewAI task with Research and Writing Agents """
+    """ Execute a CrewAI task with all Agents: [master_agent, client_agent, bidding_agent, scheduling_agent, payment_agent, subcontractor_agent, vision_agent] """
     logger.info(f"Starting CrewAI task with input: {input_data}")
-    crew = ResearchCrew(logger=logger)
+    crew = AllAgentsCrew(logger=logger)
     result = crew.crew.kickoff(inputs={"text": input_data})
     logger.info("CrewAI task completed successfully")
     return result
