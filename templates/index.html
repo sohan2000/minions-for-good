@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Submit Job</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-item {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        #error-message {
+            color: red;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Submit Your Job</h1>
+    
+    <form id="jobForm">
+        <label for="input_text">Enter your project details:</label><br>
+        <textarea id="input_text" name="input_text" rows="5" cols="50"></textarea><br><br>
+        <button type="submit">Submit</button>
+    </form>
+
+    <div id="response" style="margin-top: 20px;"></div>
+
+    <div id="status-check" style="display: none; margin-top: 20px;">
+        <h2>Check Job Status</h2>
+        <label for="job_id_input">Enter Job ID:</label><br>
+        <input type="text" id="job_id_input" placeholder="Enter Job ID here"><br><br>
+        <button id="checkStatusButton">Check Status</button>
+        <div id="statusResponse" style="margin-top: 10px;"></div>
+    </div>
+
+    <script>
+        let jobId = null;
+
+        $('#jobForm').submit(function(e) {
+            e.preventDefault(); // Prevent form submission
+
+            $.ajax({
+                url: '/submit_job',
+                method: 'POST',
+                data: {
+                    input_text: $('#input_text').val()
+                },
+                success: function(response) {
+                    $('#response').html(`
+                        <h3>Response from Server:</h3>
+                        <pre>${JSON.stringify(response, null, 2)}</pre>
+                    `);
+
+                    // Save the job ID and show the status check section
+                    jobId = response.job_id;
+                    $('#job_id_input').val(jobId); // Pre-fill the job ID input field
+                    $('#status-check').show();
+                },
+                error: function(xhr) {
+                    $('#response').html(`
+                        <h3>Error:</h3>
+                        <pre>${xhr.responseText}</pre>
+                    `);
+                }
+            });
+        });
+
+        $('#checkStatusButton').click(function() {
+            const jobIdToCheck = $('#job_id_input').val().trim();
+
+            if (!jobIdToCheck) {
+                $('#statusResponse').html('<p>Please enter a valid Job ID.</p>');
+                return;
+            }
+
+            $.ajax({
+                url: `/check_status/${jobIdToCheck}`,
+                method: 'GET',
+                success: function(response) {
+                    $('#statusResponse').html(`
+                        <h3>Job Status:</h3>
+                        <pre>${JSON.stringify(response, null, 2)}</pre>
+                    `);
+                },
+                error: function(xhr) {
+                    $('#statusResponse').html(`
+                        <h3>Error:</h3>
+                        <pre>${xhr.responseText}</pre>
+                    `);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
