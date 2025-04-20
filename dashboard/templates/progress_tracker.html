@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Progress Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl bg-white rounded-xl shadow-lg p-6">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Construction Project Progress</h2>
+        
+        <div id="progress-tracker" class="space-y-6">
+            <!-- Progress Items Will Be Auto-Generated Here -->
+        </div>
+    </div>
+
+<script>
+const progressSteps = [
+    { label: "Client requirements obtained", progress: 0 },
+    { label: "Biddings Concluded", progress: 0 },
+    { label: "Contracts established", progress: 0 },
+    { label: "Contractor 1 progress", progress: 0 },
+    { label: "Contractor 2 progress", progress: 0 },
+    { label: "Contractor 3 progress", progress: 0 }
+];
+
+function createProgressElement(step, index) {
+    const progressElement = document.createElement('div');
+    progressElement.className = 'progress-item';
+    
+    const isFirstThree = index < 3;
+    const isComplete = step.progress === 100;
+    
+    progressElement.innerHTML = `
+        <div class="flex justify-between items-center mb-2">
+            <span class="font-medium text-gray-700">${step.label}</span>
+            <span class="checkmark text-green-500 text-xl transition-opacity duration-300 
+                ${isComplete ? 'opacity-100' : 'opacity-0'}">✓</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="progress-bar bg-blue-500 h-3 rounded-full transition-all duration-500" 
+                style="width: ${step.progress}%"></div>
+        </div>
+        <div class="text-right text-sm text-gray-500 mt-1 progress-percent">
+            ${step.progress}%
+        </div>
+    `;
+    
+    return progressElement;
+}
+
+function updateProgress(index, percentage) {
+    const step = progressSteps[index];
+    step.progress = percentage;
+    
+    const container = document.getElementById('progress-tracker');
+    container.children[index].querySelector('.progress-bar').style.width = `${percentage}%`;
+    container.children[index].querySelector('.progress-percent').textContent = `${percentage}%`;
+    
+    if (percentage === 100) {
+        container.children[index].querySelector('.checkmark').classList.add('opacity-100');
+        container.children[index].querySelector('.checkmark').classList.remove('opacity-0');
+    }
+}
+
+function animateProgress(index, duration = 2000) {
+    return new Promise(resolve => {
+        const startTime = Date.now();
+        const step = progressSteps[index];
+        
+        function update() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min((elapsed / duration) * 100, 100);
+            
+            updateProgress(index, Math.floor(progress));
+            
+            if (progress < 100) {
+                requestAnimationFrame(update);
+            } else {
+                resolve();
+            }
+        }
+        
+        requestAnimationFrame(update);
+    });
+}
+
+// Initialize the progress tracker
+document.addEventListener('DOMContentLoaded', async () => {
+    const container = document.getElementById('progress-tracker');
+    
+    // Create initial progress items
+    progressSteps.forEach((step, index) => {
+        container.appendChild(createProgressElement(step, index));
+    });
+    
+    // Animate first three steps sequentially
+    await animateProgress(0);
+    await animateProgress(1);
+    await animateProgress(2);
+});
+</script>
+
+</body>
+</html>

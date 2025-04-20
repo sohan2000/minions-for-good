@@ -11,34 +11,34 @@ class ResearchCrew:
     def create_crew(self):
         self.logger.info("Creating research crew with agents")
         
-        researcher = Agent(
-            role='Research Analyst',
-            goal='Find and analyze key information',
-            backstory='Expert at extracting information',
+        client = Agent(
+            role='Client Agent',
+            goal='Approve or reject the builder’s bundled bid, then wait for milestone reports.',
+            backstory='Acts as the project owner and funding source.',
             verbose=self.verbose
         )
 
-        writer = Agent(
-            role='Content Summarizer',
-            goal='Create clear summaries from research',
-            backstory='Skilled at transforming complex information',
+        builder = Agent(
+            role='Builder Agent',
+            goal='Coordinate suppliers and deliver the best overall deal. Manage the whole construction.',
+            backstory='Veteran general contractor; summarises quotes & picks winners',
             verbose=self.verbose
         )
 
         self.logger.info("Created research and writer agents")
 
         crew = Crew(
-            agents=[researcher, writer],
+            agents=[client, builder],
             tasks=[
                 Task(
-                    description='Research: {text}',
-                    expected_output='Detailed research findings about the topic',
-                    agent=researcher
+                    description='Parse the client brief: {text}. Extract budget (+10  percent stretch)',
+                    expected_output='Accepted budget and deadline. Given money and time constraints',
+                    agent=client
                 ),
                 Task(
-                    description='Write summary',
-                    expected_output='Clear and concise summary of the research findings',
-                    agent=writer
+                    description='Give your best construction quote. ',
+                    expected_output='Contruction quotes, managing the whole construction. Dividing money.',
+                    agent=builder
                 )
             ]
         )
