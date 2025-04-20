@@ -6,7 +6,7 @@ from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel, Field, field_validator
 from masumi.config import Config
 from masumi.payment import Payment, Amount
-from crew_definition import AllAgentsCrew
+from crew_definition import ResearchCrew
 from logging_config import setup_logging
 
 # Configure logging
@@ -50,7 +50,7 @@ config = Config(
 class StartJobRequest(BaseModel):
     identifier_from_purchaser: str
     input_data: dict[str, str]
-
+    
     class Config:
         json_schema_extra = {
             "example": {
@@ -68,9 +68,9 @@ class ProvideInputRequest(BaseModel):
 # CrewAI Task Execution
 # ─────────────────────────────────────────────────────────────────────────────
 async def execute_crew_task(input_data: str) -> str:
-    """ Execute a CrewAI task with all Agents: [master_agent, client_agent, bidding_agent, scheduling_agent, payment_agent, subcontractor_agent, vision_agent] """
+    """ Execute a CrewAI task with Client and Developer Agents """
     logger.info(f"Starting CrewAI task with input: {input_data}")
-    crew = AllAgentsCrew(logger=logger)
+    crew = ResearchCrew(logger=logger)
     result = crew.crew.kickoff(inputs={"text": input_data})
     logger.info("CrewAI task completed successfully")
     return result
@@ -81,6 +81,8 @@ async def execute_crew_task(input_data: str) -> str:
 @app.post("/start_job")
 async def start_job(data: StartJobRequest):
     """ Initiates a job and creates a payment request """
+    print(f"Received data: {data}")
+    print(f"Received data.input_data: {data.input_data}")
     try:
         job_id = str(uuid.uuid4())
         agent_identifier = os.getenv("AGENT_IDENTIFIER")
@@ -172,15 +174,12 @@ async def handle_payment_status(job_id: str, payment_id: str) -> None:
 
         # Execute the AI task
         result = await execute_crew_task(jobs[job_id]["input_data"])
+        result_dict = result.json_dict
         logger.info(f"Crew task completed for job {job_id}")
-
-        # Convert result to string if it's not already
-        result_str = str(result)
         
         # Mark payment as completed on Masumi
         # Use a shorter string for the result hash
-        result_hash = result_str[:64] if len(result_str) >= 64 else result_str
-        await payment_instances[job_id].complete_payment(payment_id, result_hash)
+        await payment_instances[job_id].complete_payment(payment_id, result_dict)
         logger.info(f"Payment completed for job {job_id}")
 
         # Update job status
