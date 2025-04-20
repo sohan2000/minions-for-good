@@ -100,7 +100,7 @@ predicted_date = "December 15, 2025"
 progress_percent = 45  # update dynamically later
 
 # Move highlighted dates to Python
-highlighted_dates = [
+highlighted_dates = [1
     "2025-04-10",
     "2025-04-15",
     "2025-04-27"
